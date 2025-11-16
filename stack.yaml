@@ -1,0 +1,19 @@
+provider:
+  name: openfaas
+  gateway: http://127.0.0.1:8080
+
+functions:
+  weather-ui:
+    lang: dockerfile
+    handler: ./app
+    image: docker.io/lqhcoding/weather-ui:latest
+    environment:
+      OPENFAAS_GATEWAY: "http://gateway.openfaas:8080"
+      API_FUNCTION_NAME: "weather-api"
+
+  weather-api:
+    lang: dockerfile
+    handler: ./api
+    image: docker.io/lqhcoding/weather-api:latest
+    secrets:
+      - openweather-key

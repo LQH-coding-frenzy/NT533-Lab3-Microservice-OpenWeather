@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Weather Result</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --bg-soft: #111827;
+      --card: #020617;
+      --accent: #38bdf8;
+      --accent-soft: rgba(56, 189, 248, 0.15);
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --error-bg: #7f1d1d;
+      --error-border: #fca5a5;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #1e293b 0, #020617 45%, #020617 100%);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+
+    .shell {
+      width: 100%;
+      max-width: 960px;
+    }
+
+    .header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .title span.icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #38bdf8, #22c55e);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #0b1120;
+      font-size: 1.25rem;
+    }
+
+    .back-link a {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      color: var(--muted);
+      text-decoration: none;
+      padding: 0.4rem 0.75rem;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      background: radial-gradient(circle at top left, rgba(148, 163, 184, 0.15), transparent 60%);
+      font-size: 0.85rem;
+      transition: all 0.16s ease-out;
+    }
+
+    .back-link a:hover {
+      color: var(--text);
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.25);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(0, 2fr) minmax(0, 1.5fr);
+      gap: 1rem;
+    }
+
+    @media (max-width: 768px) {
+      .grid { grid-template-columns: minmax(0, 1fr); }
+    }
+
+    .card {
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.98));
+      border-radius: 1rem;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      box-shadow:
+        0 20px 45px rgba(15, 23, 42, 0.9),
+        0 0 0 1px rgba(15, 23, 42, 0.7);
+      padding: 1.1rem 1.25rem 1.25rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top left, rgba(56, 189, 248, 0.18), transparent 60%);
+      opacity: 0.7;
+      pointer-events: none;
+    }
+
+    .card-inner { position: relative; z-index: 1; }
+
+    .city-name {
+      font-size: 1.6rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      margin-bottom: 0.15rem;
+    }
+
+    .subtitle {
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-bottom: 1.3rem;
+    }
+
+    .weather-main {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .temp {
+      font-size: 3.2rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+    }
+
+    .temp span.unit {
+      font-size: 1.2rem;
+      color: var(--muted);
+      margin-left: 0.2rem;
+    }
+
+    .description-pill {
+      align-self: flex-start;
+      padding: 0.4rem 0.8rem;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 0.8rem;
+      text-transform: capitalize;
+    }
+
+    .stats-row {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 1.2rem;
+      flex-wrap: wrap;
+    }
+
+    .stat-chip {
+      flex: 1 1 90px;
+      min-width: 0;
+      padding: 0.55rem 0.7rem;
+      border-radius: 0.75rem;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      background: rgba(15, 23, 42, 0.9);
+      display: flex;
+      flex-direction: column;
+      gap: 0.1rem;
+    }
+
+    .stat-label {
+      font-size: 0.72rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .stat-value {
+      font-size: 0.95rem;
+      font-weight: 500;
+    }
+
+    .error-card {
+      background: linear-gradient(135deg, rgba(127, 29, 29, 0.98), rgba(185, 28, 28, 0.95));
+      border-color: var(--error-border);
+      color: #fee2e2;
+    }
+
+    .error-card::before {
+      background: radial-gradient(circle at top left, rgba(248, 113, 113, 0.3), transparent 65%);
+    }
+
+    .error-title {
+      font-weight: 600;
+      margin-bottom: 0.35rem;
+    }
+
+    .error-body { font-size: 0.9rem; }
+
+    .json-card {
+      background: var(--bg-soft);
+      border-radius: 1rem;
+      border: 1px solid rgba(30, 64, 175, 0.7);
+      padding: 0.9rem 1rem 1rem;
+    }
+
+    .json-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.4rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+    }
+
+    .json-badge {
+      padding: 0.15rem 0.5rem;
+      border-radius: 999px;
+      border: 1px solid rgba(59, 130, 246, 0.7);
+      background: rgba(15, 23, 42, 0.9);
+      font-size: 0.7rem;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      margin: 0;
+      font-size: 0.8rem;
+      font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      color: #e5e7eb;
+      max-height: 360px;
+      overflow: auto;
+    }
+
+    .empty-state {
+      text-align: center;
+      font-size: 0.95rem;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="header-row">
+      <div class="title">
+        <span class="icon">☁️</span>
+        <span>Weather Result</span>
+      </div>
+      <div class="back-link">
+        <a href="/" id="back-link">
+          <span>←</span>
+          <span>Back to search</span>
+        </a>
+      </div>
+    </div>
+
+    {% if error %}
+      <div class="card error-card">
+        <div class="card-inner">
+          <div class="error-title">Đã xảy ra lỗi</div>
+          <div class="error-body">{{ error }}</div>
+        </div>
+      </div>
+    {% elif data %}
+      <div class="grid">
+        <div class="card">
+          <div class="card-inner">
+            <div class="city-name">{{ data.name or '—' }}</div>
+            <div class="subtitle">Current conditions</div>
+
+            <div class="weather-main">
+              <div class="temp">
+                {{ data.temp }}
+                <span class="unit">°</span>
+              </div>
+              <div class="description-pill">
+                {{ data.description or 'N/A' }}
+              </div>
+            </div>
+
+            <div class="stats-row">
+              <div class="stat-chip">
+                <div class="stat-label">Humidity</div>
+                <div class="stat-value">{{ data.humidity or '—' }}</div>
+              </div>
+              <div class="stat-chip">
+                <div class="stat-label">Wind speed</div>
+                <div class="stat-value">
+                  {% if data.wind and data.wind.speed is defined %}
+                    {{ data.wind.speed }} m/s
+                  {% else %}
+                    —
+                  {% endif %}
+                </div>
+              </div>
+              <div class="stat-chip">
+                <div class="stat-label">Wind gust</div>
+                <div class="stat-value">
+                  {% if data.wind and data.wind.gust is defined %}
+                    {{ data.wind.gust }} m/s
+                  {% else %}
+                    —
+                  {% endif %}
+                </div>
+              </div>
+              <div class="stat-chip">
+                <div class="stat-label">Wind direction</div>
+                <div class="stat-value">
+                  {% if data.wind and data.wind.deg is defined %}
+                    {{ data.wind.deg }}°
+                  {% else %}
+                    —
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="json-card">
+          <div class="json-header">
+            <span>Raw response</span>
+            <span class="json-badge">JSON</span>
+          </div>
+          <pre>{{ data | tojson(indent=2) }}</pre>
+        </div>
+      </div>
+    {% else %}
+      <div class="card">
+        <div class="card-inner empty-state">
+          No data.
+        </div>
+      </div>
+    {% endif %}
+  </div>
+
+  <script>
+  (function(){
+    try {
+      var link = document.getElementById('back-link');
+      if (!link) return;
+
+      var path = window.location.pathname;
+
+      if (path.endsWith('/result')) {
+        path = path.slice(0, -('/result'.length));
+      }
+
+      if (!path.endsWith('/')) {
+        path += '/';
+      }
+
+      link.href = path;
+    } catch (e) {
+      console.error('Failed to adjust back link', e);
+    }
+  })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Weather Lookup - OpenFaaS UI</title>
+  <style>
+    :root {
+      --bg: #020617;
+      --bg-soft: #0f172a;
+      --card: #020617;
+      --accent: #38bdf8;
+      --accent-soft: rgba(56, 189, 248, 0.15);
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --border-subtle: rgba(148, 163, 184, 0.4);
+      --input-bg: rgba(15, 23, 42, 0.9);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #1e293b 0, #020617 45%, #020617 100%);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+
+    .shell {
+      width: 100%;
+      max-width: 960px;
+    }
+
+    .header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .title {
+      font-size: 1.7rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .title span.icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #38bdf8, #22c55e);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #0b1120;
+      font-size: 1.4rem;
+    }
+
+    .subtitle {
+      font-size: 0.95rem;
+      color: var(--muted);
+      max-width: 480px;
+      margin-top: 0.25rem;
+    }
+
+    .card {
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 1));
+      border-radius: 1.25rem;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      box-shadow:
+        0 22px 50px rgba(15, 23, 42, 0.9),
+        0 0 0 1px rgba(15, 23, 42, 0.7);
+      padding: 1.4rem 1.5rem 1.6rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top left, rgba(56, 189, 248, 0.2), transparent 60%);
+      opacity: 0.8;
+      pointer-events: none;
+    }
+
+    .card-inner { position: relative; z-index: 1; }
+
+    form {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1.6fr);
+      gap: 1.1rem 1.25rem;
+      align-items: flex-end;
+    }
+
+    @media (max-width: 768px) {
+      form { grid-template-columns: minmax(0, 1fr); }
+    }
+
+    .field-label {
+      display: block;
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      color: var(--muted);
+      margin-bottom: 0.35rem;
+    }
+
+    .field-description {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 0.25rem;
+    }
+
+    .input,
+    select,
+    button {
+      width: 100%;
+      border-radius: 0.75rem;
+      border: 1px solid var(--border-subtle);
+      padding: 0.65rem 0.9rem;
+      font-size: 0.95rem;
+      background-color: var(--input-bg);
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.14s ease-out, box-shadow 0.14s ease-out, transform 0.06s ease-out, background-color 0.14s ease-out;
+    }
+
+    .input::placeholder {
+      color: #6b7280;
+    }
+
+    .input:focus,
+    select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.4);
+    }
+
+    .row {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .col { flex: 1; }
+
+    .separator {
+      font-size: 0.8rem;
+      color: var(--muted);
+      text-align: center;
+      margin-top: 0.2rem;
+    }
+
+    button {
+      border-radius: 999px;
+      border: none;
+      background: linear-gradient(135deg, #38bdf8, #22c55e);
+      color: #020617;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35rem;
+      box-shadow: 0 14px 30px rgba(34, 197, 94, 0.35);
+    }
+
+    button span.icon {
+      font-size: 1.1rem;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 18px 35px rgba(34, 197, 94, 0.45);
+    }
+
+    button:active {
+      transform: translateY(0);
+      box-shadow: 0 10px 20px rgba(34, 197, 94, 0.35);
+    }
+
+    .helper-text {
+      margin-top: 0.7rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .helper-text code {
+      font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 0.78rem;
+      color: #e5e7eb;
+      background: rgba(15, 23, 42, 0.9);
+      padding: 0.12rem 0.4rem;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.45);
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="header-row">
+      <div>
+        <div class="title">
+          <span class="icon">🌤️</span>
+          <span>Weather Lookup - Group 04</span>
+        </div>
+        <p class="subtitle">Nhập tên thành phố hoặc tọa độ (lat &amp; lon) để xem thời tiết.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-inner">
+        <form action="result" method="post">
+          <div>
+            <label class="field-label" for="city">City name</label>
+            <input class="input" id="city" name="city" placeholder="VD: Hanoi" />
+          </div>
+
+          <div>
+            <div class="row">
+              <div class="col">
+                <label class="field-label" for="lat">Latitude</label>
+                <input class="input" id="lat" name="lat" placeholder="21.0278" />
+              </div>
+              <div class="col">
+                <label class="field-label" for="lon">Longitude</label>
+                <input class="input" id="lon" name="lon" placeholder="105.8342" />
+              </div>
+            </div>
+            <div class="separator">— hoặc dùng tọa độ —</div>
+          </div>
+
+          <div>
+            <label class="field-label" for="units">Units</label>
+            <select class="input" id="units" name="units">
+              <option value="metric" selected>Celcius (°C)</option>
+              <option value="imperial">Farenheit (°F)</option>
+            </select>
+          </div>
+
+          <div>
+            <button type="submit">
+              <span class="icon">🔍</span>
+              <span>Xem thời tiết</span>
+            </button>
+          </div>
+        </form>
+
+        <p class="helper-text">Access via <code>/function/weather-ui/</code>.</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  // Ensure the form posts to the function's subpath (e.g. /function/weather-ui/result)
+  (function(){
+    try{
+      const form = document.querySelector('form');
+      if(form){
+        const p = window.location.pathname.replace(/\/$/, ''); // remove trailing slash
+        form.action = p + '/result';
+      }
+    }catch(e){
+      console.error('failed to set form action', e);
+    }
+  })();
+  </script>
+
+</body>
+</html>
